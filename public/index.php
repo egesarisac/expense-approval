@@ -8,6 +8,8 @@ use App\Http\Request;
 use App\Infrastructure\Logger;
 use App\Auth\AuthController;
 use App\Auth\AuthService;
+use App\Expense\ApproveExpense;
+use App\Expense\ExpenseController;
 
 $requestId = bin2hex(random_bytes(16));
 
@@ -22,8 +24,10 @@ try {
     $request = Request::capture();
     $router = new Router();
     $registerRoutes = require __DIR__ . '/../routes.php';
-    $auth = new AuthController(new AuthService($pdo));
-    $registerRoutes($router, $auth);
+    $authService = new AuthService($pdo);
+    $auth = new AuthController($authService);
+    $expenses = new ExpenseController($authService, new ApproveExpense($pdo));
+    $registerRoutes($router, $auth, $expenses);
     $response = $router->dispatch($request);
 } catch (ApiException $e) {
     $response = JsonResponse::error($e, $requestId);
