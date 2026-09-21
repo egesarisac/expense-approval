@@ -1,0 +1,42 @@
+services:
+  db:
+    image: mariadb:11.4.13
+    environment:
+      MARIADB_DATABASE: expense_approval
+      MARIADB_USER: expense_app
+      MARIADB_PASSWORD: ${DB_PASSWORD:-local-password}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root-password}
+    volumes:
+      - db-data:/var/lib/mysql
+    ports:
+      - "127.0.0.1:3307:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    environment:
+      APP_ENV: local
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: expense_approval
+      DB_USER: expense_app
+      DB_PASSWORD: ${DB_PASSWORD:-local-password}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8080/') === false ? 1 : 0);"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  db-data:

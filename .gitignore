@@ -1,0 +1,17 @@
+/vendor/
+/.env
+/.env.*
+!/.env.example
+*.log
+*.pem
+*.key
+/.phpunit.cache/
+/coverage/
+/tmp/
+/data/
+/db-data/
+*.zip
+*.tar.gz
+.DS_Store
+/.codebase-memory/
+/docs
