@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-$seed = static function (PDO $pdo): void {
+$seed = static function (PDO $pdo, ?string $passwordHash = null): void {
     $pdo->beginTransaction();
     try {
         $user = $pdo->prepare('INSERT INTO users (id, email, password, role, manager_id) VALUES (?, ?, ?, ?, ?)');
@@ -11,7 +11,7 @@ $seed = static function (PDO $pdo): void {
             [3, 'employee.a@app.test', 'employee', 1],
             [4, 'employee.b@app.test', 'employee', 2],
         ] as [$id, $email, $role, $manager]) {
-            $user->execute([$id, $email, password_hash('demo-password', PASSWORD_BCRYPT), $role, $manager]);
+            $user->execute([$id, $email, $passwordHash ?? password_hash('demo-password', PASSWORD_BCRYPT), $role, $manager]);
         }
 
         $now = gmdate('Y-m-d H:i:s');

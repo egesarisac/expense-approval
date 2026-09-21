@@ -6,6 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 abstract class ApiTestCase extends TestCase
 {
+    private static ?string $demoPasswordHash = null;
     protected PDO $pdo;
 
     protected function setUp(): void
@@ -26,8 +27,10 @@ abstract class ApiTestCase extends TestCase
             $this->pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
         }
         $this->pdo->exec(file_get_contents(__DIR__ . '/../database/schema.sql'));
+        // Reuse the bcrypt hash to speed up the tests
+        self::$demoPasswordHash ??= password_hash('demo-password', PASSWORD_BCRYPT);
         $seed = require __DIR__ . '/../database/seed.php';
-        $seed($this->pdo);
+        $seed($this->pdo, self::$demoPasswordHash);
     }
 
     protected function request(string $path, mixed $body = [], ?string $token = null, string $method = 'POST', string $type = 'application/json'): array
