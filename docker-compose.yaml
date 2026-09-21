@@ -49,5 +49,37 @@ services:
       retries: 10
       start_period: 5s
 
+  test-db:
+    image: mariadb:11.4.13
+    profiles: [test]
+    environment:
+      MARIADB_DATABASE: expense_approval_test
+      MARIADB_USER: expense_test
+      MARIADB_PASSWORD: test-password
+      MARIADB_ROOT_PASSWORD: test-root-password
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  tests:
+    build: .
+    profiles: [test]
+    command: ["php", "bin/test.php"]
+    environment:
+      APP_ENV: test
+      TEST_APP_URL: ${TEST_APP_URL:-http://127.0.0.1:8090}
+      DB_HOST: test-db
+      DB_PORT: "3306"
+      DB_NAME: expense_approval_test
+      DB_USER: expense_test
+      DB_PASSWORD: test-password
+    depends_on:
+      test-db:
+        condition: service_healthy
+
 volumes:
   db-data:
