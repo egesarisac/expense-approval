@@ -4,11 +4,14 @@ declare(strict_types=1);
 use App\Http\ApiException;
 use App\Http\JsonResponse;
 use App\Http\Router;
+use App\Http\Request;
 use App\Infrastructure\Logger;
+use App\Auth\AuthController;
+use App\Auth\AuthService;
 
 $requestId = bin2hex(random_bytes(16));
 
-$method = $_SERVER['REQUEST_METHOD'] ?? '';
+$request = null;
 $router = null;
 $operation = 'bootstrap';
 
@@ -16,11 +19,12 @@ try {
     $pdo = require __DIR__ . '/../bootstrap.php';
 
     $operation = 'dispatch';
+    $request = Request::capture();
     $router = new Router();
     $registerRoutes = require __DIR__ . '/../routes.php';
-    $registerRoutes($router);
-    $path = explode('?', $_SERVER['REQUEST_URI'] ?? '/', 2)[0];
-    $response = $router->dispatch($method, $path);
+    $auth = new AuthController(new AuthService($pdo));
+    $registerRoutes($router, $auth);
+    $response = $router->dispatch($request);
 } catch (ApiException $e) {
     $response = JsonResponse::error($e, $requestId);
 } catch (Throwable $e) {
@@ -40,6 +44,6 @@ $response->send($requestId);
 Logger::info('request_completed', [
     'request_id' => $requestId,
     'route_name' => $router?->routeName() ?? 'unknown',
-    'method' => $method,
+    'method' => $request?->method ?? ($_SERVER['REQUEST_METHOD'] ?? ''),
     'status' => $response->status,
 ]);

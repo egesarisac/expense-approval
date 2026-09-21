@@ -30,8 +30,10 @@ final class Router
         return $this->routeName;
     }
 
-    public function dispatch(string $method, string $path): JsonResponse
+    public function dispatch(Request $request): JsonResponse
     {
+        $method = $request->method;
+        $path = $request->path;
         $this->routeName = 'unknown';
         // Prefer an exact registered path over a matching parameterized path.
         $candidates = isset($this->routes[$path]) ? [$path => $this->routes[$path]] : $this->routes;
@@ -42,7 +44,7 @@ final class Router
             }
             $this->routeName = $template;
             if (isset($route['handlers'][$method])) {
-                return $route['handlers'][$method](...array_slice($matches, 1));
+                return $route['handlers'][$method]($request, ...array_slice($matches, 1));
             }
             $allowed = array_merge($allowed, array_keys($route['handlers']));
         }
